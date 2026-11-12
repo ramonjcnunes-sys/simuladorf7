@@ -103,7 +103,7 @@
 <div class="informacoes"><h2>Comissão da simulação</h2>
 <div class="resumo comissao-resumo">
 <div><span>Tabela aplicada</span><strong id="tabela-comissao">K</strong></div>
-<div><span>Taxa de comissão (sobre o líquido)</span><strong>10,20%</strong></div>
+<div><span>Taxa de comissão (sobre o líquido)</span><strong id="taxa-comissao">10,20%</strong></div>
 <div><span>Valor da comissão</span><strong class="comissao-valor" id="comissao">R$ 0,00</strong></div>
 </div>
 <p class="aviso-prazo" hidden="" id="aviso-prazo"></p></div>
@@ -132,7 +132,7 @@ const cetK = Object.freeze({
  12:2.66, 11:2.91, 10:3.15, 9:3.50, 8:3.90, 7:4.45,
  6:5.15, 5:6.18, 4:7.67, 3:10.23, 2:15.34
 });
-const COMISSAO = 0.102;
+const COMISSOES = Object.freeze({K:0.102, L:0.068, M:0.0595, N:0.0425, O:0.0383});
 const el = id => document.getElementById(id);
 const moeda = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
 const numero = n => new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
@@ -164,6 +164,7 @@ function atualizar(){
  el('entrada-label').textContent=porLimite?'Limite do cartão: *':'Valor desejado a receber: *';
  el('saida-label').textContent=porLimite?'Valor a receber:':'Limite necessário:';
  el('tabela-comissao').textContent=tabela;
+ el('taxa-comissao').textContent=numero(COMISSOES[tabela]*100)+'%';
  el('cet').textContent=regra.cet===null?'não disponível':numero(regra.cet)+'%';
  const aviso=el('aviso-prazo');
  aviso.hidden=!regra.estimativa;
@@ -171,7 +172,7 @@ function atualizar(){
  if(!valido){for(const id of ['saida','total','parcela','comissao'])el(id).textContent='—';return;}
  const limite=porLimite?entrada:arredonda(entrada/regra.fator);
  const recebido=arredonda(limite*regra.fator);
- const comissao=arredonda(recebido*COMISSAO);
+ const comissao=arredonda(recebido*COMISSOES[tabela]);
  el('saida').textContent=numero(porLimite?recebido:limite);
  el('total').textContent=moeda(limite);
  el('parcela').textContent=moeda(arredonda(limite/parcelas));
