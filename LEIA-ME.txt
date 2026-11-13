@@ -1,0 +1,57 @@
+F7 MIRAR PRIME — pacote para Easypanel (teste, ainda não publicado)
+
+ARQUIVOS:
+  index.html          cópia integral do simulador recebido, sem alterar os cálculos.
+  app.py              FastAPI, login/logout e painel administrativo.
+  db.py               conexão e estrutura de usuários/sessões no PostgreSQL.
+  manage_users.py     cria o primeiro administrador no terminal do contêiner.
+  Dockerfile          construção para Easypanel.
+  requirements.txt    dependências Python.
+  .dockerignore       evita incluir arquivos sensíveis na imagem.
+
+PREPARAÇÃO:
+1) Faça backup do repositório existente antes de qualquer alteração.
+2) Extraia os arquivos deste ZIP. No repositório GitHub "ramonjcnunes-sys/simuladorf7",
+   envie Dockerfile, requirements.txt, app.py, db.py, manage_users.py,
+   .dockerignore e index.html (substituindo apenas pelo conteúdo idêntico recebido).
+   Mantenha o CNAME antigo por enquanto, sem mudar o domínio.
+3) No Easypanel, no serviço f7-simulador, confirme fonte GitHub e build "Dockerfile".
+4) Configure em Ambiente:
+   DATABASE_URL = URL INTERNA PostgreSQL fornecida pelo Easypanel no serviço
+                  simulador_credito > Credenciais. Não exponha esta URL em screenshots.
+   PUBLIC_ORIGIN = https://SEU-DOMINIO-TEMPORARIO (sem barra final)
+   (após a migração, alterar para https://credito.vipvision.com.br)
+   O endereço de teste deve ser HTTPS.
+5) Configure o domínio temporário no Easypanel apontando para porta de contêiner 8000.
+   Não aponte credito.vipvision.com.br ainda e não abra PostgreSQL publicamente.
+6) Clique Implantar. Confira logs. Quando a aplicação iniciar, abra o console/terminal
+   do contêiner e execute:
+     python manage_users.py create admin --admin
+   Digite uma senha forte (12+ caracteres). O usuário admin não é criado automaticamente.
+7) Teste: login, logout, nova conta no painel /admin, bloqueio e acesso direto à raiz
+   em aba anônima. Garanta que sem login há apenas redirecionamento para /login.
+8) Depois de validar, altere DNS/domínio e PUBLIC_ORIGIN para dominio definitivo.
+   Desative GitHub Pages e qualquer outra URL pública antiga antes de considerar
+   as informações do simulador protegidas. Depois, configure autorização do GitHub
+   no Easypanel e só então torne o repositório privado.
+
+IMPORTANTE SOBRE SEGURANÇA:
+- O código do simulador atual contém regras de negócio e comissões em JavaScript
+  no index.html. A nova aplicação só entrega esse HTML após login, mas as regras
+  ainda ficam visíveis para qualquer usuário autenticado. Se forem sigilosas para
+  os usuários autorizados, devem ser migradas para o backend em outro passo.
+- O login tem senha com hash Argon2, sessão aleatória guardada no PostgreSQL
+  apenas como hash, cookie Secure/HttpOnly/SameSite=Strict, proteção de origem
+  para POST e bloqueio de sessões de usuários desativados.
+- Limitação de tentativas está em memória por processo: adequada somente à fase
+  inicial de instância única; em produção mais ampla use rate-limit no proxy/Redis.
+- Reserve backups periódicos do PostgreSQL. Nunca exponha DATABASE_URL, senhas ou
+  tokens de GitHub na conversa ou no repositório.
+- O upload dos arquivos no GitHub pode iniciar a atualização do site público atual
+  dependendo de configurações. Não mude o domínio até os testes.
+- É um pacote inicial de implantação: valide em ambiente de testes antes de produção.
+
+Comando para redefinir uma senha no console:
+  python manage_users.py reset-password NOME_USUARIO
+Para bloquear pelo console:
+  python manage_users.py disable NOME_USUARIO
