@@ -70,6 +70,19 @@
   .estimado-curto{font-size:12px;color:#77500b;margin-left:7px;font-weight:normal}
   .sem-taxa{color:#657286;font-weight:500;font-size:16px}
   @media(max-width:700px){.comissao-grupos{grid-template-columns:1fr}.comissao-card .valor{font-size:23px}}
+
+/* Comissões em duas faixas compactas; três informações por faixa. */
+.comissoes-compactas{padding:16px 20px;margin-top:22px}
+.comissao-faixa + .comissao-faixa{border-top:1px solid #dce3ec;margin-top:15px;padding-top:15px}
+.comissao-faixa h2{font-size:17px;color:#102B4E;margin:0 0 13px}
+.comissao-linha{display:grid;grid-template-columns:1fr 1.3fr 1fr;column-gap:22px;row-gap:10px;align-items:start}
+.comissao-dado{min-width:0}
+.comissao-dado span{display:block;color:#637084;font-size:13px;margin-bottom:5px}
+.comissao-dado strong{display:block;font-size:20px;color:#132a49;overflow-wrap:anywhere}
+.comissao-dado .destaque-comissao{font-size:24px;color:#102B4E}
+.site-footer{background:#081b35;color:#c9d6e8;text-align:center;padding:19px 16px;font-size:13px;line-height:1.7}
+.site-footer a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:650px){.comissao-linha{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}.comissao-dado:last-child{grid-column:1/-1}.comissoes-compactas{padding:14px}.comissao-dado strong{font-size:18px}.comissao-dado .destaque-comissao{font-size:22px}}
 </style>
 </head>
 <body>
@@ -84,14 +97,26 @@
 <div class="campo"><label for="tabela">Tabela</label><select id="tabela"></select></div>
 <div class="campo"><span class="rotulo">Total a Pagar</span><div class="resultado"><strong id="total">—</strong> (CET informado: <span id="cet">—</span>) <span class="estimado-curto" hidden="" id="estimado">Estimativa</span></div></div>
 <div class="campo"><span class="rotulo">Valor da Parcela</span><output class="parcela" id="parcela">—</output></div>
-<div class="informacoes">
-<p class="tabela-info">Tabela aplicada: <strong id="tabela-comissao">—</strong></p>
-<div class="comissao-grupos">
-<div class="comissao-card"><h3>Comissão Master</h3><span class="taxa-label">Percentual sobre o valor líquido</span><span class="taxa" id="taxa-master">—</span><span class="taxa-label">Valor da comissão</span><strong class="valor" id="valor-master">—</strong></div>
-<div class="comissao-card"><h3>Comissão Outras Bandeiras</h3><span class="taxa-label">Percentual sobre o valor líquido</span><span class="taxa" id="taxa-outras">—</span><span class="taxa-label">Valor da comissão</span><strong class="valor" id="valor-outras">—</strong></div>
-</div>
+<div class="informacoes comissoes-compactas" aria-label="Comissões da simulação">
+  <div class="comissao-faixa">
+    <h2>Comissão Master</h2>
+    <div class="comissao-linha">
+      <div class="comissao-dado"><span>Tabela aplicada</span><strong id="tabela-comissao">—</strong></div>
+      <div class="comissao-dado"><span>Taxa de comissão (sobre o líquido)</span><strong id="taxa-master">—</strong></div>
+      <div class="comissao-dado"><span>Valor da comissão</span><strong class="destaque-comissao" id="valor-master">—</strong></div>
+    </div>
+  </div>
+  <div class="comissao-faixa">
+    <h2>Comissão Outras Bandeiras</h2>
+    <div class="comissao-linha">
+      <div class="comissao-dado"><span>Tabela aplicada</span><strong id="tabela-comissao-outras">—</strong></div>
+      <div class="comissao-dado"><span>Taxa de comissão (sobre o líquido)</span><strong id="taxa-outras">—</strong></div>
+      <div class="comissao-dado"><span>Valor da comissão</span><strong class="destaque-comissao" id="valor-outras">—</strong></div>
+    </div>
+  </div>
 </div>
 </section></main>
+<footer class="site-footer">© 2026 Vip Vision Tech · Consultoria em Business Intelligence · <a href="mailto:ramon@vipvision.com.br">ramon@vipvision.com.br</a> · <a href="https://www.f7mirarprime.com.br/" target="_blank" rel="noopener noreferrer">www.f7mirarprime.com.br</a></footer>
 <script>"use strict";
 // Os fatores reproduzem os exemplos enviados, por proporcionalidade de valor.
 // Não constituem tabelas oficiais de preços para todos os valores ou prazos.
@@ -124,13 +149,14 @@ const REGRAS18 = Object.freeze({
 const LIQUIDO_K_20000 = Object.freeze({12:15153.81,11:15153.81,10:15211.44,9:15211.44,8:15246.23,7:15246.23,6:15281.17,5:15281.17,4:15304.56,3:15304.56,2:15304.56});
 const CET_K = Object.freeze({12:2.66,11:2.91,10:3.15,9:3.50,8:3.90,7:4.45,6:5.15,5:6.18,4:7.67,3:10.23,2:15.34});
 // Percentuais dos prints: Master / Outras Bandeiras, aplicados sobre o líquido.
-// Não foram informadas comissões para P e Q; ficam em branco.
+// Comissões Master / Outras Bandeiras de P e Q, fornecidas posteriormente.
 const COMISSOES = Object.freeze({
  A:[38.25,37.40], B:[34.00,33.15], C:[29.75,28.90],
  D:[26.35,25.50], E:[21.25,20.40], F:[19.55,18.70],
  G:[18.70,17.85], H:[17.00,16.15], I:[12.75,11.90],
  J:[11.05,10.20], K:[10.20,9.35], L:[6.80,5.95],
- M:[5.95,5.10], N:[4.25,3.40], O:[3.83,2.98]
+ M:[5.95,5.10], N:[4.25,3.40], O:[3.83,2.98],
+ P:[3.40,2.55], Q:[2.13,1.28]
 });
 const $=id=>document.getElementById(id);
 const moeda = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
@@ -172,6 +198,7 @@ function atualizar(){
  $('cet').textContent=r.cet==null?'não disponível':numero(r.cet)+'%';
  $('estimado').hidden=!r.estimativa;
  $('tabela-comissao').textContent=tabela.replace('-',' - ');
+ $('tabela-comissao-outras').textContent=tabela.replace('-',' - ');
  const taxa=COMISSOES[tabela.replace('-18','')];
  $('taxa-master').textContent=taxa?percentual(taxa[0]):'Não informada';
  $('taxa-outras').textContent=taxa?percentual(taxa[1]):'Não informada';
