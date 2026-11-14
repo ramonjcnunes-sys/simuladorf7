@@ -159,8 +159,8 @@ def simulator(request: Request):
 
 @app.post('/logout')
 def logout(request: Request, csrf: str = Form(...)):
-    if not origin_allowed(request):
-        return Response(status_code=403)
+    # A sessão e o token CSRF da sessão são obrigatórios.
+    # Não depender do cabeçalho Origin, que pode variar atrás do proxy.
     user = current_user(request)
     if not user or not secrets.compare_digest(user[3], csrf):
         return Response(status_code=403)
@@ -184,14 +184,13 @@ def admin(request: Request):
     list_rows = ''.join(f'''<tr><td style="padding:8px">{safe_html(r[1])}</td><td>{'Administrador' if r[2] else 'Vendedor'}</td>
 <td>{'Ativo' if r[3] else 'Bloqueado'}</td><td><form method="post" action="/admin/toggle" style="margin:0"><input type="hidden" name="csrf" value="{safe_html(user[3])}"><input type="hidden" name="user_id" value="{r[0]}"><button type="submit">{'Bloquear' if r[3] else 'Ativar'}</button></form></td></tr>''' for r in rows)
     body = f'''<h1>Gerenciar usuários</h1><a href="/">Voltar ao simulador</a><h2>Novo usuário</h2>
-<form method="post" action="/admin/create"><input type="hidden" name="csrf" value="{safe_html(user[3])}"><label>Usuário</label><input required name="username" minlength="3" maxlength="64" pattern="[a-zA-Z0-9_.-]+"><label>Senha inicial (mínimo 12 caracteres)</label><input required type="password" name="password" minlength="12"><button>Cadastrar vendedor</button></form>
+<form method="post" action="/admin/create" autocomplete="off"><input type="hidden" name="csrf" value="{safe_html(user[3])}"><label>Usuário</label><input required name="username" autocomplete="off" minlength="3" maxlength="64" pattern="[a-zA-Z0-9_.-]+"><label>Senha inicial (mínimo 12 caracteres)</label><input required type="password" name="password" autocomplete="new-password" minlength="12"><button>Cadastrar vendedor</button></form>
 <h2>Usuários existentes</h2><table style="width:100%;font-size:13px"><thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th>Ação</th></tr></thead><tbody>{list_rows}</tbody></table>
 <p class="muted">O bloqueio revoga as sessões existentes. Para redefinir uma senha, use o comando administrativo do servidor.</p>'''
     return HTMLResponse(page('Gerenciar usuários', body))
 
 def require_admin_and_csrf(request, csrf):
-    if not origin_allowed(request):
-        return None
+    # Exige sessão de administrador e CSRF vinculado à sessão.
     user = current_user(request)
     if not user or not user[2] or not secrets.compare_digest(user[3], csrf):
         return None
