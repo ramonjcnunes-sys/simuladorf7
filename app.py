@@ -16,6 +16,7 @@ from db import connect, init_db
 
 ph = PasswordHasher()
 COOKIE = 'f7_session'
+LOGIN_CSRF_COOKIE = '__Host-f7_login_csrf'
 TTL_HOURS = 12
 # Limitação simples para uma instância (em escala, usar Redis ou rate-limit no proxy).
 attempts = defaultdict(deque)
@@ -77,12 +78,20 @@ def page(title, body):
 <body><header><b>F7 MIRAR PRIME</b> · Área restrita</header><main>{body}</main></body></html>'''
 
 def login_view(error=''):
+    # Token CSRF exclusivo do formulário de login. O prefixo __Host- impede
+    # que outro subdomínio defina esse cookie para o domínio principal.
+    csrf = secrets.token_urlsafe(32)
     msg = '<p class="error">Usuário ou senha inválidos.</p>' if error else ''
     body = f'''<h1>Entrar no simulador</h1><p class="muted">Acesso exclusivo para usuários autorizados.</p>{msg}
-<form method="post" action="/login"><label for="username">Usuário</label><input required id="username" name="username" autocomplete="username" maxlength="64">
+<form method="post" action="/login"><input type="hidden" name="login_csrf" value="{safe_html(csrf)}">
+<label for="username">Usuário</label><input required id="username" name="username" autocomplete="username" maxlength="64">
 <label for="password">Senha</label><input required type="password" id="password" name="password" autocomplete="current-password">
 <button type="submit">Entrar</button></form>'''
-    return HTMLResponse(page('Entrar', body))
+    response = HTMLResponse(page('Entrar', body))
+    response.set_cookie(LOGIN_CSRF_COOKIE, csrf, max_age=900, httponly=True,
+                        secure=True, samesite='strict', path='/')
+    return response
+
 
 @app.get('/health')
 def health():
@@ -95,9 +104,14 @@ def login(request: Request):
     return login_view()
 
 @app.post('/login')
-def do_login(request: Request, username: str = Form(...), password: str = Form(...)):
-    if not origin_allowed(request):
-        return Response(status_code=403)
+def do_login(request: Request, username: str = Form(...), password: str = Form(...),
+             login_csrf: str = Form(...)):
+    # A validação CSRF não depende de cabeçalhos Origin que podem variar
+    # entre navegadores e proxies. É obrigatória para todos os logins.
+    expected_csrf = request.cookies.get(LOGIN_CSRF_COOKIE, '')
+    if not expected_csrf or not secrets.compare_digest(expected_csrf, login_csrf):
+        return Response('Formulário expirado. Recarregue a página de login.',
+                        status_code=403, media_type='text/plain')
     key = (request.client.host if request.client else '', username.casefold())
     history = attempts[key]
     now = time.monotonic()
@@ -127,6 +141,7 @@ def do_login(request: Request, username: str = Form(...), password: str = Form(.
         cur.execute('DELETE FROM sessions WHERE expires_at < now()')
     resp = RedirectResponse('/', status_code=303)
     resp.set_cookie(COOKIE, raw_token, max_age=TTL_HOURS*3600, httponly=True, secure=True, samesite='strict', path='/')
+    resp.delete_cookie(LOGIN_CSRF_COOKIE, path='/')
     return resp
 
 @app.get('/')
