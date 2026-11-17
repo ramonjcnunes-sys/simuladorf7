@@ -190,6 +190,12 @@ const COMISSOES = Object.freeze({
  M:[5.95,5.10], N:[4.25,3.40], O:[3.83,2.98],
  P:[3.40,2.55], Q:[2.13,1.28]
 });
+// Comissões exclusivas das tabelas A-18, B-18 e C-18 (13 a 18 parcelas).
+const COMISSOES_18 = Object.freeze({
+ 'A-18':[21.25,20.40],
+ 'B-18':[11.05,10.20],
+ 'C-18':[5.10,4.25]
+});
 const $=id=>document.getElementById(id);
 const moeda = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 const numero = v => new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v);
@@ -231,7 +237,7 @@ function atualizar(){
  $('estimado').hidden=!r.estimativa;
  $('tabela-comissao').textContent=tabela.replace('-',' - ');
  $('tabela-comissao-outras').textContent=tabela.replace('-',' - ');
- const taxa=COMISSOES[tabela.replace('-18','')];
+ const taxa=tabela.endsWith('-18')?COMISSOES_18[tabela]:COMISSOES[tabela];
  $('taxa-master').textContent=taxa?percentual(taxa[0]):'Não informada';
  $('taxa-outras').textContent=taxa?percentual(taxa[1]):'Não informada';
  if(!valido){for(const id of ['saida','total','parcela','valor-master','valor-outras'])$(id).textContent='—';return}
