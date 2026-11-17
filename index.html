@@ -158,11 +158,24 @@ const BASE12 = Object.freeze({
  P:{ fator:1000/1199.80, cet:1.66 },
  Q:{ fator:1000/1187.80, cet:1.57 }
 });
-// Exemplos fornecidos para receber R$ 1.000 em 18 parcelas.
+// Regras observadas nos 18 prints, com limite de cartão de R$ 1.000,00.
+// O fator é o líquido recebido dividido pelo limite. Valores maiores são proporcionais.
 const REGRAS18 = Object.freeze({
- 'A-18':{fator:1000/1619.80,cet:3.44},
- 'B-18':{fator:1000/1439.80,cet:2.44},
- 'C-18':{fator:1000/1313.80,cet:1.74}
+ 'A-18': Object.freeze({
+  13:{fator:620.81/1000,cet:4.70}, 14:{fator:620.81/1000,cet:4.36},
+  15:{fator:619.27/1000,cet:4.10}, 16:{fator:619.27/1000,cet:3.84},
+  17:{fator:617.36/1000,cet:3.65}, 18:{fator:617.36/1000,cet:3.44}
+ }),
+ 'B-18': Object.freeze({
+  13:{fator:699.40/1000,cet:3.31}, 14:{fator:699.40/1000,cet:3.07},
+  15:{fator:696.96/1000,cet:2.90}, 16:{fator:696.96/1000,cet:2.72},
+  17:{fator:694.54/1000,cet:2.59}, 18:{fator:694.54/1000,cet:2.44}
+ }),
+ 'C-18': Object.freeze({
+  13:{fator:766.99/1000,cet:2.34}, 14:{fator:766.99/1000,cet:2.17},
+  15:{fator:764.06/1000,cet:2.06}, 16:{fator:764.06/1000,cet:1.93},
+  17:{fator:761.15/1000,cet:1.85}, 18:{fator:761.15/1000,cet:1.74}
+ })
 });
 // Série da tabela K observada com R$ 20.000 de limite em 2-12x.
 const LIQUIDO_K_20000 = Object.freeze({12:15153.81,11:15153.81,10:15211.44,9:15211.44,8:15246.23,7:15246.23,6:15281.17,5:15281.17,4:15304.56,3:15304.56,2:15304.56});
@@ -194,12 +207,12 @@ $('tabela').value='M';
 function atualizarParcelas(){
  const t=$('tabela').value, atual=$('parcelas').value;
  $('parcelas').replaceChildren();
- const prazos=t.endsWith('-18')?[18]:['P','Q'].includes(t)?[12]:Array.from({length:11},(_,i)=>12-i);
+ const prazos=t.endsWith('-18')?Array.from({length:6},(_,i)=>18-i):['P','Q'].includes(t)?[12]:Array.from({length:11},(_,i)=>12-i);
  for(const p of prazos){$('parcelas').add(new Option(p+' X',String(p)))}
  $('parcelas').value=prazos.includes(Number(atual))?atual:String(prazos[0]);
 }
 function obterRegra(tabela,parcelas){
- if(REGRAS18[tabela]) return {...REGRAS18[tabela],estimativa:false};
+ if(REGRAS18[tabela]) return {...REGRAS18[tabela][parcelas],estimativa:false};
  const base=BASE12[tabela];
  if(parcelas===12) return {...base,estimativa:false};
  if(tabela==='K')return {fator:LIQUIDO_K_20000[parcelas]/20000,cet:CET_K[parcelas],estimativa:false};
